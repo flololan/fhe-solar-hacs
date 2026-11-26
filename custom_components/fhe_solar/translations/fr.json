@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connecter FHE Solar",
+        "description": "Utilisez les identifiants de l'application « FHE Solar ».",
+        "data": {
+          "email": "Adresse e-mail",
+          "password": "Mot de passe"
+        }
+      },
+      "reauth_confirm": {
+        "title": "FHE Solar doit être reconnecté",
+        "description": "Les identifiants enregistrés ont été refusés par l'API FHE. Veuillez vous reconnecter.",
+        "data": {
+          "email": "Adresse e-mail",
+          "password": "Mot de passe"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Adresse e-mail ou mot de passe invalide.",
+      "cannot_connect": "Impossible de se connecter à l'API FHE.",
+      "unknown": "Erreur inattendue."
+    },
+    "abort": {
+      "already_configured": "Cette maison FHE est déjà configurée.",
+      "reauth_successful": "La réauthentification a réussi.",
+      "unique_id_mismatch": "Le compte utilisé appartient à une autre maison FHE que celle configurée."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "output_power": {
+        "name": "Puissance de sortie"
+      },
+      "pv1_power": {
+        "name": "Puissance PV1"
+      },
+      "pv2_power": {
+        "name": "Puissance PV2"
+      },
+      "today_yield": {
+        "name": "Production du jour"
+      },
+      "total_power": {
+        "name": "Puissance totale"
+      },
+      "total_today_yield": {
+        "name": "Production totale du jour"
+      }
+    }
+  }
+}

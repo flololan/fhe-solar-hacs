@@ -20,6 +20,8 @@ Home Assistant configuration and restart.
 
 ## Configuration
 
+The UI texts are available in English, German and French.
+
 The integration is configured from the UI (**Settings → Devices & services → Add integration → FHE Solar**).
 Enter the e-mail address and password of your FHE Solar account. The integration signs in, stores the
 returned API token together with the credentials, and uses the home linked to the account.
