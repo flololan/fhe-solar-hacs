@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Original artwork for the fhe_solar custom integration (GPL-3.0). Generic sun + solar panel; no third-party logo. -->
+  <g stroke="#F59E0B" stroke-width="12" stroke-linecap="round">
+    <line x1="128" y1="6"  x2="128" y2="30"/>
+    <line x1="48"  y1="39" x2="65"  y2="56"/>
+    <line x1="208" y1="39" x2="191" y2="56"/>
+    <line x1="14"  y1="118" x2="38" y2="118"/>
+    <line x1="242" y1="118" x2="218" y2="118"/>
+  </g>
+  <circle cx="128" cy="118" r="52" fill="#FBBF24"/>
+  <circle cx="128" cy="118" r="36" fill="#F59E0B"/>
+  <!-- panel -->
+  <path d="M60 158 L196 158 L224 240 L32 240 Z" fill="#1E3A8A"/>
+  <path d="M68 166 L188 166 L212 232 L44 232 Z" fill="#2563EB"/>
+  <g stroke="#1E3A8A" stroke-width="5">
+    <line x1="128" y1="166" x2="128" y2="232"/>
+    <line x1="98"  y1="166" x2="86"  y2="232"/>
+    <line x1="158" y1="166" x2="170" y2="232"/>
+    <line x1="60"  y1="199" x2="196" y2="199"/>
+  </g>
+</svg>

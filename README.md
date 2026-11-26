@@ -79,3 +79,6 @@ Please report problems via the
 ## License
 
 GPL-3.0 – see [LICENSE](LICENSE).
+
+The brand icon (`custom_components/fhe_solar/brand/`, source in `assets/icon.svg`) is original artwork made for
+this project (generic sun and solar panel) and is licensed under the same license. It is not the FHE logo.
