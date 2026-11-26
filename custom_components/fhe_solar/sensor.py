@@ -8,6 +8,7 @@ from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, Sen
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import FheSolarConfigEntry, FheSolarCoordinator
@@ -53,7 +54,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class FheBase(CoordinatorEntity[FheSolarCoordinator], RestoreSensor, SensorEntity):
+class FheBase(CoordinatorEntity[FheSolarCoordinator], SensorEntity):
     # Entity names come from translations (translation_key); HA prepends the device name.
     _attr_has_entity_name = True
 
@@ -69,6 +70,25 @@ class FheBase(CoordinatorEntity[FheSolarCoordinator], RestoreSensor, SensorEntit
     def device_info(self):
         # Überschrieben in Subklassen für Inverter vs. Haus
         return None
+
+
+async def _restore_today_value(entity: RestoreSensor) -> float | None:
+    """Return the last stored native value if it was written on the current local day.
+
+    RestoreSensor keeps native_value/native_unit (sensor docs, "Restoring sensor
+    states"); the stored State keeps its original last_changed, which is used
+    to make sure a value from a previous day is not carried over.
+    """
+    last_state = await entity.async_get_last_state()
+    last_data = await entity.async_get_last_sensor_data()
+    if last_state is None or last_data is None:
+        return None
+    if dt_util.as_local(last_state.last_changed).date() != dt_util.now().date():
+        return None
+    value = last_data.native_value
+    if isinstance(value, (int, float)) and last_data.native_unit_of_measurement == "kWh":
+        return float(value)
+    return None
 
 
 class FhePowerSensor(FheBase):
@@ -104,7 +124,7 @@ class FhePowerSensor(FheBase):
         return float(val) if isinstance(val, (int, float)) else None
 
 
-class FheEnergyTodaySensor(FheBase):
+class FheEnergyTodaySensor(FheBase, RestoreSensor):
     _attr_translation_key = "today_yield"
 
     def __init__(self, coordinator: FheSolarCoordinator, serial: str, home_label: str):
@@ -126,12 +146,16 @@ class FheEnergyTodaySensor(FheBase):
             "via_device": (DOMAIN, f"home-{self.coordinator.home_id}"),
         }
 
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        restored = await _restore_today_value(self)
+        if restored is not None:
+            self.coordinator.seed_today_yield(self._serial, restored)
+
     @property
     def native_value(self) -> Optional[float]:
-        instant = (self.coordinator.data or {}).get("instantData") or {}
-        inv = instant.get(self._serial) or {}
-        val = inv.get("todayYield")
-        return float(val) if isinstance(val, (int, float)) else None
+        # Held per-day maximum from the coordinator; None only if nothing was seen today.
+        return self.coordinator.get_today_yield(self._serial)
 
 
 class FheTotalPowerSensor(FheBase):
@@ -169,7 +193,7 @@ class FheTotalPowerSensor(FheBase):
         return total
 
 
-class FheTotalEnergyTodaySensor(FheBase):
+class FheTotalEnergyTodaySensor(FheBase, RestoreSensor):
     # Dieser Sensor ist die Entität für das Energy Dashboard
     _attr_translation_key = "total_today_yield"
 
@@ -179,6 +203,15 @@ class FheTotalEnergyTodaySensor(FheBase):
         self._attr_device_class = SensorDeviceClass.ENERGY
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_native_unit_of_measurement = "kWh"
+        self._restored_total: float | None = None
+        self._restored_date = None
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        restored = await _restore_today_value(self)
+        if restored is not None:
+            self._restored_total = restored
+            self._restored_date = dt_util.now().date()
 
     @property
     def device_info(self):
@@ -193,13 +226,9 @@ class FheTotalEnergyTodaySensor(FheBase):
 
     @property
     def native_value(self) -> Optional[float]:
-        data = self.coordinator.data or {}
-        instant = data.get("instantData") or {}
-        if not instant:
-            return 0.0  # nachts nach Reset: 0 kWh
-        total = 0.0
-        for inv in instant.values():
-            val = inv.get("todayYield")
-            if isinstance(val, (int, float)):
-                total += float(val)
+        # Sum of the held per-inverter values; never below the value restored
+        # for the same day after a restart (TOTAL_INCREASING must not drop).
+        total = self.coordinator.today_yield_total
+        if self._restored_total is not None and self._restored_date == dt_util.now().date():
+            return max(total, self._restored_total)
         return total
