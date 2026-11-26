@@ -34,18 +34,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             continue
         entities.extend(
             [
-                FhePowerSensor(coordinator, serial, "outputPower", f"FHE {serial} Output Power", home_label),
-                FhePowerSensor(coordinator, serial, "pv1Power", f"FHE {serial} PV1 Power", home_label),
-                FhePowerSensor(coordinator, serial, "pv2Power", f"FHE {serial} PV2 Power", home_label),
-                FheEnergyTodaySensor(coordinator, serial, f"FHE {serial} Today Yield", home_label),
+                FhePowerSensor(coordinator, serial, "outputPower", "output_power", home_label),
+                FhePowerSensor(coordinator, serial, "pv1Power", "pv1_power", home_label),
+                FhePowerSensor(coordinator, serial, "pv2Power", "pv2_power", home_label),
+                FheEnergyTodaySensor(coordinator, serial, home_label),
             ]
         )
 
     # Haus-Gesamt
     entities.extend(
         [
-            FheTotalPowerSensor(coordinator, f"FHE {home_label} Total Power"),
-            FheTotalEnergyTodaySensor(coordinator, f"FHE {home_label} Today Yield"),
+            FheTotalPowerSensor(coordinator),
+            FheTotalEnergyTodaySensor(coordinator),
         ]
     )
 
@@ -53,7 +53,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 
 class FheBase(CoordinatorEntity[FheSolarCoordinator], RestoreSensor, SensorEntity):
-    _attr_has_entity_name = False
+    # Entity names come from translations (translation_key); HA prepends the device name.
+    _attr_has_entity_name = True
 
     def __init__(self, coordinator: FheSolarCoordinator):
         super().__init__(coordinator)
@@ -70,11 +71,11 @@ class FheBase(CoordinatorEntity[FheSolarCoordinator], RestoreSensor, SensorEntit
 
 
 class FhePowerSensor(FheBase):
-    def __init__(self, coordinator: FheSolarCoordinator, serial: str, key: str, name: str, home_label: str):
+    def __init__(self, coordinator: FheSolarCoordinator, serial: str, key: str, translation_key: str, home_label: str):
         super().__init__(coordinator)
         self._serial = serial
         self._key = key
-        self._attr_name = name
+        self._attr_translation_key = translation_key
         self._attr_unique_id = f"{coordinator.home_id}-{serial}-{key}"
         self._attr_device_class = SensorDeviceClass.POWER
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -103,10 +104,11 @@ class FhePowerSensor(FheBase):
 
 
 class FheEnergyTodaySensor(FheBase):
-    def __init__(self, coordinator: FheSolarCoordinator, serial: str, name: str, home_label: str):
+    _attr_translation_key = "today_yield"
+
+    def __init__(self, coordinator: FheSolarCoordinator, serial: str, home_label: str):
         super().__init__(coordinator)
         self._serial = serial
-        self._attr_name = name
         self._attr_unique_id = f"{coordinator.home_id}-{serial}-todayYield"
         self._attr_device_class = SensorDeviceClass.ENERGY
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
@@ -132,9 +134,10 @@ class FheEnergyTodaySensor(FheBase):
 
 
 class FheTotalPowerSensor(FheBase):
-    def __init__(self, coordinator: FheSolarCoordinator, name: str):
+    _attr_translation_key = "total_power"
+
+    def __init__(self, coordinator: FheSolarCoordinator):
         super().__init__(coordinator)
-        self._attr_name = name
         self._attr_unique_id = f"{coordinator.home_id}-total-outputPower"
         self._attr_device_class = SensorDeviceClass.POWER
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -167,9 +170,10 @@ class FheTotalPowerSensor(FheBase):
 
 class FheTotalEnergyTodaySensor(FheBase):
     # Dieser Sensor ist die Entität für das Energy Dashboard
-    def __init__(self, coordinator: FheSolarCoordinator, name: str):
+    _attr_translation_key = "total_today_yield"
+
+    def __init__(self, coordinator: FheSolarCoordinator):
         super().__init__(coordinator)
-        self._attr_name = name
         self._attr_unique_id = f"{coordinator.home_id}-total-todayYield"
         self._attr_device_class = SensorDeviceClass.ENERGY
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
