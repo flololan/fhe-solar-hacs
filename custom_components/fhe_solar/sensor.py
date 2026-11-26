@@ -1,30 +1,31 @@
+"""Sensor platform for FHE Solar."""
+
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass, RestoreSensor
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, CONF_HOME_ID
-from .coordinator import FheSolarCoordinator
+from .const import DOMAIN
+from .coordinator import FheSolarConfigEntry, FheSolarCoordinator
 
 PARALLEL_UPDATES = 0
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
-    coordinator = FheSolarCoordinator(hass, entry)
-    await coordinator.async_config_entry_first_refresh()
+
+async def async_setup_entry(
+    hass: HomeAssistant, entry: FheSolarConfigEntry, async_add_entities: AddEntitiesCallback
+) -> None:
+    # Coordinator is created and refreshed in __init__.async_setup_entry.
+    coordinator = entry.runtime_data
 
     entities: list[SensorEntity] = []
 
     data = coordinator.data
     home = data.get("home", {})
     home_label = home.get("label") or f"Home {home.get('id')}"
-    home_id = home.get("id") or entry.data[CONF_HOME_ID]
-    instant = data.get("instantData") or {}
     inverters = data.get("fheMaster1000s") or []
 
     # Geräte/Entitäten pro Inverter

@@ -25,7 +25,8 @@
     },
     "abort": {
       "already_configured": "This FHE home is already configured.",
-      "reauth_successful": "Re-authentication was successful."
+      "reauth_successful": "Re-authentication was successful.",
+      "unique_id_mismatch": "The account you signed in to belongs to a different FHE home than the one configured."
     }
   },
   "entity": {
