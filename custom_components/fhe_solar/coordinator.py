@@ -1,34 +1,42 @@
+"""Data update coordinator for FHE Solar."""
+
 from __future__ import annotations
 
 import logging
 from datetime import timedelta
-from typing import Any, Dict, Optional
+from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import aiohttp_client
-from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
+
+from .api import FheSolarApi, FheSolarApiError, FheSolarAuthError, FheSolarConnectionError
+from .const import (
+    CONF_EMAIL,
+    CONF_HOME_ID,
+    CONF_PASSWORD,
+    CONF_TOKEN,
+    DEFAULT_SCAN_INTERVAL_ACTIVE,
+    DEFAULT_SCAN_INTERVAL_IDLE,
+    DOMAIN,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-from .api import FheSolarApi
-from .const import (
-    DOMAIN,
-    CONF_HOME_ID,
-    CONF_TOKEN,
-    CONF_EMAIL,
-    CONF_PASSWORD,
-    DEFAULT_SCAN_INTERVAL_ACTIVE,
-    DEFAULT_SCAN_INTERVAL_IDLE,
-    MIN_SCAN_INTERVAL,
-    MAX_SCAN_INTERVAL,
-)
+type FheSolarConfigEntry = ConfigEntry[FheSolarCoordinator]
 
-class FheSolarCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
-    def __init__(self, hass: HomeAssistant, config_entry):
-        self.hass = hass
-        self.entry = config_entry
+
+class FheSolarCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+    """Fetch the home data (incl. instantData of all inverters) from the FHE API."""
+
+    config_entry: FheSolarConfigEntry
+
+    def __init__(self, hass: HomeAssistant, config_entry: FheSolarConfigEntry) -> None:
         session = aiohttp_client.async_get_clientsession(hass)
         self.api = FheSolarApi(session)
         self.api.set_token(config_entry.data[CONF_TOKEN])
@@ -38,6 +46,7 @@ class FheSolarCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=config_entry,
             name=f"{DOMAIN}-{self.home_id}",
             update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL_ACTIVE),
         )
@@ -50,7 +59,7 @@ class FheSolarCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             return 7 <= hour <= 19
         return sun.attributes["elevation"] > 0
 
-    def _has_instant_data(self, data: Dict[str, Any]) -> bool:
+    def _has_instant_data(self, data: dict[str, Any]) -> bool:
         instant = data.get("instantData") or {}
         return bool(instant)
 
@@ -68,23 +77,37 @@ class FheSolarCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             seconds = max(seconds, DEFAULT_SCAN_INTERVAL_IDLE)
         self.update_interval = timedelta(seconds=seconds)
 
-    async def _async_update_data(self) -> Dict[str, Any]:
+    async def _async_refresh_token(self) -> None:
+        """Sign in again with the stored credentials and persist the new token.
+
+        The API answers 401 {"message":"Failed to authenticate token"} for a
+        rejected token (own test, see RESULTS.md). Email and password are already
+        stored in the config entry, so a new token can be obtained without user
+        interaction. Only if that sign-in is rejected as well, reauthentication
+        is started by raising ConfigEntryAuthFailed (see _async_update_data).
+        """
+        entry = self.config_entry
+        data = await self.api.sign_in(entry.data[CONF_EMAIL], entry.data[CONF_PASSWORD])
+        self.hass.config_entries.async_update_entry(
+            entry, data={**entry.data, CONF_TOKEN: data["token"]}
+        )
+
+    async def _async_update_data(self) -> dict[str, Any]:
         try:
-            data = await self.api.get_home(self.home_id)
-        except PermissionError as e:
-            # Reauth anstoßen
-            self.hass.async_create_task(self._start_reauth())
-            raise UpdateFailed("Unauthorized") from e
-        except Exception as e:
-            raise UpdateFailed(str(e)) from e
+            try:
+                data = await self.api.get_home(self.home_id)
+            except FheSolarAuthError:
+                _LOGGER.debug("FHE token rejected, signing in again")
+                await self._async_refresh_token()
+                data = await self.api.get_home(self.home_id)
+        except FheSolarAuthError as err:
+            # Credentials no longer work -> HA starts the reauth flow.
+            raise ConfigEntryAuthFailed from err
+        except FheSolarConnectionError as err:
+            raise UpdateFailed(f"Cannot reach FHE API: {err}") from err
+        except FheSolarApiError as err:
+            raise UpdateFailed(str(err)) from err
 
         has_data = self._has_instant_data(data)
         self._adjust_interval(has_data)
         return data
-
-    async def _start_reauth(self) -> None:
-        await self.hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={"source": "reauth", "entry_id": self.entry.entry_id},
-            data=self.entry.data,
-        )

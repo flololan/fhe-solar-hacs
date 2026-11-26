@@ -24,8 +24,9 @@
       "unknown": "Unerwarteter Fehler."
     },
     "abort": {
-      "already_configured": "Dieses FHE-Zuhause ist bereits eingerichtet.",
-      "reauth_successful": "Neu-Anmeldung erfolgreich."
+      "already_configured": "Dieses FHE-Haus ist bereits eingerichtet.",
+      "reauth_successful": "Neu-Anmeldung erfolgreich.",
+      "unique_id_mismatch": "Das angemeldete Konto gehört zu einem anderen FHE-Haus als dem konfigurierten."
     }
   },
   "entity": {
