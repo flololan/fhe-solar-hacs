@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -43,6 +43,13 @@ class FheSolarCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.home_id = int(config_entry.data[CONF_HOME_ID])
 
         self._empty_count = 0
+        # Highest todayYield seen per inverter serial for the current local day.
+        # Observed 2026-11-25 (HA history): inverters drop out of instantData in
+        # the evening (16:34-16:37) and one inverter reported todayYield 0.0 at
+        # 16:40 after 0.5 earlier that day. Energy produced today cannot
+        # decrease within the day, so the per-day maximum is kept.
+        self.today_yield: dict[str, float] = {}
+        self._today_yield_date: date | None = None
         super().__init__(
             hass,
             _LOGGER,
@@ -77,6 +84,43 @@ class FheSolarCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             seconds = max(seconds, DEFAULT_SCAN_INTERVAL_IDLE)
         self.update_interval = timedelta(seconds=seconds)
 
+    def _reset_today_yield_if_new_day(self) -> None:
+        today = dt_util.now().date()
+        if today != self._today_yield_date:
+            self._today_yield_date = today
+            self.today_yield = {}
+
+    def seed_today_yield(self, serial: str, value: float) -> None:
+        """Seed a per-inverter value (used by RestoreSensor after a restart)."""
+        self._reset_today_yield_if_new_day()
+        self.today_yield[serial] = max(self.today_yield.get(serial, 0.0), float(value))
+
+    def _update_today_yield(self, data: dict[str, Any]) -> None:
+        self._reset_today_yield_if_new_day()
+        instant = data.get("instantData") or {}
+        for serial, inv in instant.items():
+            if not isinstance(inv, dict):
+                continue
+            val = inv.get("todayYield")
+            if isinstance(val, (int, float)):
+                self.today_yield[serial] = max(self.today_yield.get(serial, 0.0), float(val))
+
+    def _today_yield_is_current(self) -> bool:
+        return self._today_yield_date == dt_util.now().date()
+
+    def get_today_yield(self, serial: str) -> float | None:
+        """Held value of one inverter for today, None if nothing was seen today."""
+        if not self._today_yield_is_current():
+            return None
+        return self.today_yield.get(serial)
+
+    @property
+    def today_yield_total(self) -> float:
+        """Sum of the held per-inverter values (0.0 if nothing was seen today)."""
+        if not self._today_yield_is_current():
+            return 0.0
+        return float(sum(self.today_yield.values()))
+
     async def _async_refresh_token(self) -> None:
         """Sign in again with the stored credentials and persist the new token.
 
@@ -110,4 +154,5 @@ class FheSolarCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         has_data = self._has_instant_data(data)
         self._adjust_interval(has_data)
+        self._update_today_yield(data)
         return data
