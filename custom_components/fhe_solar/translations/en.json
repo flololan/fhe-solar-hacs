@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Conneect to FHE Solar",
+        "description": "Use the credentials used in the 'fhe solar'-app.",
+        "data": {
+          "email": "E-Mail",
+          "password": "Passwort"
+        }
+      },
+      "reauth_confirm": {
+        "title": "FHE Solar needs to be reconnected",
+        "data": {
+          "email": "E-Mail",
+          "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "auth": "Login failed. Please verify credentials."
+    },
+    "abort": {
+      "reauth_successful": "Authentification successful"
+    }
+  }
+}

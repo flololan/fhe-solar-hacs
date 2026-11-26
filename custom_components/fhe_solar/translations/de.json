@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "FHE Solar verbinden",
+        "description": "Melde dich mit deinen FHE-Zugangsdaten an.",
+        "data": {
+          "email": "E-Mail",
+          "password": "Passwort"
+        }
+      },
+      "reauth_confirm": {
+        "title": "FHE Solar neu anmelden",
+        "data": {
+          "email": "E-Mail",
+          "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "auth": "Anmeldung fehlgeschlagen. Bitte überprüfe Zugangsdaten."
+    },
+    "abort": {
+      "reauth_successful": "Neu-Anmeldung erfolgreich."
+    }
+  }
+}
