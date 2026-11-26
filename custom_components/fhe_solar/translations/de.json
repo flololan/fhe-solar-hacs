@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "FHE Solar verbinden",
-        "description": "Melde dich mit deinen FHE-Zugangsdaten an.",
+        "description": "Verwende die Zugangsdaten der 'FHE Solar'-App.",
         "data": {
           "email": "E-Mail",
           "password": "Passwort"
@@ -11,6 +11,7 @@
       },
       "reauth_confirm": {
         "title": "FHE Solar neu anmelden",
+        "description": "Die gespeicherten Zugangsdaten wurden von der FHE-API abgelehnt. Bitte melde dich erneut an.",
         "data": {
           "email": "E-Mail",
           "password": "Passwort"
@@ -18,10 +19,35 @@
       }
     },
     "error": {
-      "auth": "Anmeldung fehlgeschlagen. Bitte überprüfe Zugangsdaten."
+      "invalid_auth": "E-Mail oder Passwort ungültig.",
+      "cannot_connect": "Verbindung zur FHE-API fehlgeschlagen.",
+      "unknown": "Unerwarteter Fehler."
     },
     "abort": {
+      "already_configured": "Dieses FHE-Zuhause ist bereits eingerichtet.",
       "reauth_successful": "Neu-Anmeldung erfolgreich."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "output_power": {
+        "name": "Ausgangsleistung"
+      },
+      "pv1_power": {
+        "name": "PV1-Leistung"
+      },
+      "pv2_power": {
+        "name": "PV2-Leistung"
+      },
+      "today_yield": {
+        "name": "Tagesertrag"
+      },
+      "total_power": {
+        "name": "Gesamtleistung"
+      },
+      "total_today_yield": {
+        "name": "Gesamt-Tagesertrag"
+      }
     }
   }
 }

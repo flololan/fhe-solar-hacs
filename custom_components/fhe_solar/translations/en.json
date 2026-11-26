@@ -2,26 +2,52 @@
   "config": {
     "step": {
       "user": {
-        "title": "Conneect to FHE Solar",
-        "description": "Use the credentials used in the 'fhe solar'-app.",
+        "title": "Connect to FHE Solar",
+        "description": "Use the credentials of the 'FHE Solar' app.",
         "data": {
-          "email": "E-Mail",
-          "password": "Passwort"
+          "email": "Email",
+          "password": "Password"
         }
       },
       "reauth_confirm": {
         "title": "FHE Solar needs to be reconnected",
+        "description": "The stored credentials were rejected by the FHE API. Please sign in again.",
         "data": {
-          "email": "E-Mail",
-          "password": "Passwort"
+          "email": "Email",
+          "password": "Password"
         }
       }
     },
     "error": {
-      "auth": "Login failed. Please verify credentials."
+      "invalid_auth": "Invalid email or password.",
+      "cannot_connect": "Failed to connect to the FHE API.",
+      "unknown": "Unexpected error."
     },
     "abort": {
-      "reauth_successful": "Authentification successful"
+      "already_configured": "This FHE home is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "output_power": {
+        "name": "Output power"
+      },
+      "pv1_power": {
+        "name": "PV1 power"
+      },
+      "pv2_power": {
+        "name": "PV2 power"
+      },
+      "today_yield": {
+        "name": "Today yield"
+      },
+      "total_power": {
+        "name": "Total power"
+      },
+      "total_today_yield": {
+        "name": "Total today yield"
+      }
     }
   }
 }
