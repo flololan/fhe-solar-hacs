@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import async_timeout
+import asyncio
 from typing import Any, Dict, Optional
+
 import aiohttp
 
 from .const import API_BASE
@@ -21,7 +22,7 @@ class FheSolarApi:
     async def sign_in(self, email: str, password: str) -> Dict[str, Any]:
         url = f"{API_BASE}/signIn"
         payload = {"email": email, "password": password}
-        async with async_timeout.timeout(20):
+        async with asyncio.timeout(20):
             async with self._session.post(url, json=payload) as resp:
                 if resp.status != 200:
                     text = await resp.text()
@@ -38,7 +39,7 @@ class FheSolarApi:
             raise RuntimeError("No token set")
         url = f"{API_BASE}/homes/{home_id}"
         headers = {"Authorization": f"Bearer {self._token}"}
-        async with async_timeout.timeout(20):
+        async with asyncio.timeout(20):
             async with self._session.get(url, headers=headers) as resp:
                 if resp.status == 401:
                     raise PermissionError("Unauthorized")
