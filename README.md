@@ -6,7 +6,7 @@ into Home Assistant, using the same cloud account as the *FHE Solar* app.
 <!-- ha-marketplace:exclude-start -->
 ## Installation
 
-[![Open your Home Assistant instance and open a repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=flololan&repository=fhe-solar-hacs&category=integration)
+[![Open your Home Assistant instance and open a repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=flololan&repository=fhe-solar-integration&category=integration)
 
 1. Open the repository in the Home Assistant **Marketplace** with the button above and install it.
 2. Restart Home Assistant.
@@ -76,7 +76,7 @@ it may change or stop working without notice. Use at your own risk.
 ## Issues
 
 Please report problems via the
-[issue tracker](https://github.com/flololan/fhe-solar-hacs/issues) and attach the diagnostics file.
+[issue tracker](https://github.com/flololan/fhe-solar-integration/issues) and attach the diagnostics file.
 
 ## License
 
