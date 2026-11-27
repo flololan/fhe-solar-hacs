@@ -11,16 +11,25 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
+from homeassistant.helpers.selector import (
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
 
 from .api import FheSolarApi, FheSolarAuthError, FheSolarConnectionError
 from .const import CONF_HOME_ID, CONF_TOKEN, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+PASSWORD_SELECTOR = TextSelector(
+    TextSelectorConfig(type=TextSelectorType.PASSWORD, autocomplete="current-password")
+)
+
 STEP_USER_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_EMAIL): str,
-        vol.Required(CONF_PASSWORD): str,
+        vol.Required(CONF_PASSWORD): PASSWORD_SELECTOR,
     }
 )
 
@@ -36,7 +45,7 @@ async def _try_sign_in(
         return None, "invalid_auth"
     except FheSolarConnectionError:
         return None, "cannot_connect"
-    except Exception:  # noqa: BLE001
+    except Exception:
         _LOGGER.exception("Unexpected error during FHE Solar sign-in")
         return None, "unknown"
 
@@ -97,7 +106,7 @@ class FheSolarConfigFlow(ConfigFlow, domain=DOMAIN):
         schema = vol.Schema(
             {
                 vol.Required(CONF_EMAIL, default=reauth_entry.data.get(CONF_EMAIL)): str,
-                vol.Required(CONF_PASSWORD): str,
+                vol.Required(CONF_PASSWORD): PASSWORD_SELECTOR,
             }
         )
         return self.async_show_form(step_id="reauth_confirm", data_schema=schema, errors=errors)
