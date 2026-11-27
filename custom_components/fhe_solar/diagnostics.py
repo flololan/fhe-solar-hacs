@@ -7,7 +7,7 @@ from typing import Any
 from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_EMAIL, CONF_PASSWORD, CONF_TOKEN
+from .const import CONF_EMAIL, CONF_HOME_ID, CONF_PASSWORD, CONF_TOKEN
 from .coordinator import FheSolarConfigEntry
 
 # Keys observed in the API responses (own structure test 2026-11-26, RESULTS.md):
@@ -16,10 +16,15 @@ from .coordinator import FheSolarConfigEntry
 # - location data: `address`, `city`, `postalCode`
 # - `label` is the home name (contains the owner's name in the observed data)
 # - `serialNumber` of the inverters (listed as example key in the HA diagnostics docs)
+# - the FHE home id ties a file to one account: `home_id` (entry data),
+#   `homeId` (`user`/`users[]`), `id` (`home`, nested objects)
 TO_REDACT = {
     CONF_EMAIL,
+    CONF_HOME_ID,
     CONF_PASSWORD,
     CONF_TOKEN,
+    "homeId",
+    "id",
     "firstName",
     "lastName",
     "phone",
@@ -57,8 +62,8 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: FheSola
         data["instantData"] = _anonymize_serial_keys(data["instantData"], serial_map)
 
     return {
+        # entry.title is "FHE Solar (<home id>)" and is therefore not included.
         "entry": {
-            "title": entry.title,
             "data": async_redact_data(dict(entry.data), TO_REDACT),
         },
         "coordinator": {
